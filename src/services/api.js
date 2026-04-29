@@ -53,7 +53,7 @@ export const registerUser = async (payload) =>
     body: JSON.stringify(payload),
   });
 
-export const fetchProducts = async () => request('/products/public');
+export const fetchProducts = async () => request('/products/all');
 
 export const fetchProductById = async (id) => request(`/products/${id}`);
 

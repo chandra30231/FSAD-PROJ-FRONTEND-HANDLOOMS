@@ -1,14 +1,17 @@
 import { notifyDataUpdated } from './platformStore';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '');
+// ✅ Base URL (NO /api at end)
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
 
-const buildUrl = (path) => `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+// ✅ Always add /api here
+const buildUrl = (path) => {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE_URL}/api${cleanPath}`;
+};
 
 const parseJsonSafely = async (response) => {
   const text = await response.text();
-  if (!text) {
-    return null;
-  }
+  if (!text) return null;
 
   try {
     return JSON.parse(text);
@@ -41,71 +44,60 @@ const withDataRefresh = async (action) => {
   return result;
 };
 
-export const loginUser = async (credentials) =>
+// ================= AUTH =================
+export const loginUser = (credentials) =>
   request('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });
 
-export const registerUser = async (payload) =>
+export const registerUser = (payload) =>
   request('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
-export const fetchProducts = async () => request('/products/all');
+// ================= PRODUCTS =================
+export const fetchProducts = () => request('/products/all');
 
-export const fetchProductById = async (id) => request(`/products/${id}`);
+export const fetchProductById = (id) => request(`/products/${id}`);
 
-export const fetchBuyerOrders = async (buyerId) => request(`/orders/buyer/${buyerId}`);
+export const fetchArtisanProducts = (artisanId) =>
+  request(`/products/artisan/${artisanId}`);
 
-export const fetchArtisanOrders = async (artisanId) => request(`/orders/artisan/${artisanId}`);
-
-export const fetchAllOrders = async () => request('/orders');
-
-export const fetchUsersForAdmin = async () => request('/users');
-
-export const updateUserStatus = async (userId, status) =>
-  withDataRefresh(() =>
-    request(`/users/${userId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    }),
-  );
-
-export const deleteUserAccount = async (userId) =>
-  withDataRefresh(() =>
-    request(`/users/${userId}`, {
-      method: 'DELETE',
-    }),
-  );
-
-export const fetchArtisanProducts = async (artisanId) => request(`/products/artisan/${artisanId}`);
-
-export const createArtisanProduct = async (artisanId, payload) =>
+export const createArtisanProduct = (artisanId, payload) =>
   withDataRefresh(() =>
     request(`/products/artisan/${artisanId}`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    })
   );
 
-export const updateArtisanProduct = async (artisanId, productId, payload) =>
+export const updateArtisanProduct = (artisanId, productId, payload) =>
   withDataRefresh(() =>
     request(`/products/artisan/${artisanId}/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
-    }),
+    })
   );
 
-export const deleteArtisanProduct = async (artisanId, productId) =>
+export const deleteArtisanProduct = (artisanId, productId) =>
   withDataRefresh(() =>
     request(`/products/artisan/${artisanId}/${productId}`, {
       method: 'DELETE',
-    }),
+    })
   );
 
-export const checkoutOrder = async (buyerId, items) =>
+// ================= ORDERS =================
+export const fetchBuyerOrders = (buyerId) =>
+  request(`/orders/buyer/${buyerId}`);
+
+export const fetchArtisanOrders = (artisanId) =>
+  request(`/orders/artisan/${artisanId}`);
+
+export const fetchAllOrders = () => request('/orders');
+
+export const checkoutOrder = (buyerId, items) =>
   withDataRefresh(() =>
     request('/orders/checkout', {
       method: 'POST',
@@ -116,20 +108,39 @@ export const checkoutOrder = async (buyerId, items) =>
           quantity: Number(item.quantity),
         })),
       }),
-    }),
+    })
   );
 
-export const updateOrderStatus = async (orderId, status) =>
+export const updateOrderStatus = (orderId, status) =>
   withDataRefresh(() =>
     request(`/orders/${orderId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
-    }),
+    })
   );
 
-export const fetchCampaigns = async () => request('/campaigns');
+// ================= USERS =================
+export const fetchUsersForAdmin = () => request('/users');
 
-export const createCampaign = async (payload) =>
+export const updateUserStatus = (userId, status) =>
+  withDataRefresh(() =>
+    request(`/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  );
+
+export const deleteUserAccount = (userId) =>
+  withDataRefresh(() =>
+    request(`/users/${userId}`, {
+      method: 'DELETE',
+    })
+  );
+
+// ================= CAMPAIGNS =================
+export const fetchCampaigns = () => request('/campaigns');
+
+export const createCampaign = (payload) =>
   withDataRefresh(() =>
     request('/campaigns', {
       method: 'POST',
@@ -137,11 +148,13 @@ export const createCampaign = async (payload) =>
         ...payload,
         budget: Number(payload.budget),
         reach: payload.reach === '' ? 0 : Number(payload.reach),
-        conversionRate: payload.conversionRate === '' ? 0 : Number(payload.conversionRate),
+        conversionRate:
+          payload.conversionRate === '' ? 0 : Number(payload.conversionRate),
       }),
-    }),
+    })
   );
 
-export const fetchPlatformMetrics = async () => request('/metrics/platform');
+// ================= METRICS =================
+export const fetchPlatformMetrics = () => request('/metrics/platform');
 
-export const fetchMarketingMetrics = async () => request('/metrics/marketing');
+export const fetchMarketingMetrics = () => request('/metrics/marketing');
